@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seni Seviyorum</title>
+    <style>
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #080208; }
+        canvas { display: block; filter: contrast(115%) saturate(120%); }
+    </style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+const sequence = ["10", "9", "8", "7", "6", "5", "4", "3", "2", "1", "SENİ", "ÇOK", "SEVİYORUM", "AŞKIM", "SENİN", "İSTEMEN", "YETER BEBEĞİM", "AL SANA;", "EN GÜZELİ:)", "sevgilimi\nçok\nseviyorum."];
+const particleCount = 750; 
+const pinkBright = "#FF69B4"; 
+const purpleDeep = "#2D0A31";
+
+let particles = [];
+let stars = [];
+let bokeh = [];
+let sequenceIndex = 0;
+
+function initBackground() {
+    for(let i=0; i<100; i++) {
+        stars.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            size: Math.random() * 2,
+            twinkle: Math.random() * 0.05
+        });
+    }
+    for(let i=0; i<15; i++) {
+        bokeh.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height + canvas.height,
+            size: Math.random() * 60 + 20,
+            speed: Math.random() * 0.5 + 0.2,
+            opacity: Math.random() * 0.2
+        });
+    }
+}
+
+class Particle {
+    constructor() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.targetX = this.x;
+        this.targetY = this.y;
+        this.size = Math.random() * 1.5 + 1.1; 
+        this.speed = 0.04 + Math.random() * 0.05;
+        this.jitter = Math.random() * 100;
+    }
+
+    update() {
+        const time = Date.now() * 0.0015;
+        let driftX = Math.sin(time + this.jitter) * 2;
+        let driftY = Math.cos(time + this.jitter) * 2;
+        this.x += (this.targetX + driftX - this.x) * this.speed;
+        this.y += (this.targetY + driftY - this.y) * this.speed;
+    }
+
+    draw() {
+        ctx.fillStyle = pinkBright;
+        ctx.shadowBlur = 4;
+        ctx.shadowColor = "#FF1493";
+        const x = this.x, y = this.y, s = this.size;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.bezierCurveTo(x, y - s, x - s * 1.5, y - s, x - s * 1.5, y + s/2);
+        ctx.bezierCurveTo(x - s * 1.5, y + s * 2.5, x, y + s * 3, x, y + s * 4);
+        ctx.bezierCurveTo(x, y + s * 3, x + s * 1.5, y + s * 2.5, x + s * 1.5, y + s/2);
+        ctx.bezierCurveTo(x + s * 1.5, y - s, x, y - s, x, y);
+        ctx.fill();
+    }
+}
+
+for (let i = 0; i < particleCount; i++) particles.push(new Particle());
+
+function getPoints(text) {
+    const tempCanvas = document.createElement('canvas');
+    const tempCtx = tempCanvas.getContext('2d');
+    tempCanvas.width = canvas.width;
+    tempCanvas.height = canvas.height;
+    let dynamicSize = Math.min(canvas.width / 5, 130);
+    if(text.length > 6) dynamicSize = Math.min(canvas.width / 9, 80);
+    tempCtx.fillStyle = "white";
+    tempCtx.font = `900 ${dynamicSize}px sans-serif`;
+    tempCtx.textAlign = "center";
+    tempCtx.textBaseline = "middle";
+    tempCtx.fillText(text, canvas.width / 2, canvas.height / 2);
+    const imageData = tempCtx.getImageData(0, 0, canvas.width, canvas.height).data;
+    const allPoints = [];
+    for (let y = 0; y < canvas.height; y += 3) {
+        for (let x = 0; x < canvas.width; x += 3) {
+            if (imageData[(y * canvas.width + x) * 4] > 128) allPoints.push({ x, y });
+        }
+    }
+    const finalPoints = [];
+    const step = allPoints.length / particleCount;
+    for (let i = 0; i < particleCount; i++) {
+        const index = Math.floor(i * step);
+        if (allPoints[index]) finalPoints.push(allPoints[index]);
+    }
+    return finalPoints;
+}
+
+function updateSequence() {
+    if (sequenceIndex >= sequence.length) return;
+    const currentText = sequence[sequenceIndex];
+    const targetPoints = getPoints(currentText);
+    for (let i = 0; i < particles.length; i++) {
+        const point = targetPoints[i % targetPoints.length];
+        particles[i].targetX = point.x;
+        particles[i].targetY = point.y;
+    }
+    let delay = (currentText === "AŞKIMM") ? 5000 : 1900;
+    sequenceIndex++;
+    setTimeout(updateSequence, delay);
+}
+
+function drawBackground() {
+    let bgGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    bgGrad.addColorStop(0, "#080208");
+    bgGrad.addColorStop(1, "#1a051d");
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    stars.forEach(s => {
+        ctx.fillStyle = `rgba(255, 255, 255, ${0.3 + Math.random() * 0.4})`;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+        ctx.fill();
+    });
+    
+    bokeh.forEach(b => {
+        b.y -= b.speed;
+        if(b.y < -b.size) b.y = canvas.height + b.size;
+        let bGrad = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.size);
+        bGrad.addColorStop(0, `rgba(255, 105, 180, ${b.opacity})`);
+        bGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = bGrad;
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.size, 0, Math.PI * 2);
+        ctx.fill();
+    });
+    
+    const time = Date.now() * 0.0005;
+    ctx.strokeStyle = "rgba(255, 20, 147, 0.05)";
+    ctx.lineWidth = 2;
+    for(let i=0; i<3; i++) {
+        ctx.beginPath();
+        ctx.moveTo(0, canvas.height * (0.4 + i*0.1));
+        for(let x=0; x<canvas.width; x+=20) {
+            let y = canvas.height * (0.4 + i*0.1) + Math.sin(x * 0.002 + time + i) * 50;
+            ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+    }
+}
+
+function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawBackground();
+    particles.forEach(p => { p.update(); p.draw(); });
+    requestAnimationFrame(animate);
+}
+
+window.addEventListener('resize', () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+});
+
+initBackground();
+setTimeout(updateSequence, 1000);
+animate();
+</script>
+</body>
+</html>
