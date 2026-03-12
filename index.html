@@ -20,7 +20,7 @@ canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
 const sequence = ["10", "9", "8", "7", "6", "5", "4", "3", "2", "1", "SENİ", "ÇOK", "SEVİYORUM", "AŞKIM", "SENİN", "İSTEMEN", "YETER BEBEĞİM", "AL SANA;", "EN GÜZELİ:)", "çok seviyorum."];
-const particleCount = 750; 
+const particleCount = 500; 
 const pinkBright = "#FF69B4"; 
 const purpleDeep = "#2D0A31";
 
@@ -70,7 +70,7 @@ class Particle {
 
     draw() {
         ctx.fillStyle = pinkBright;
-        ctx.shadowBlur = 4;
+        ctx.shadowBlur = 2;
         ctx.shadowColor = "#FF1493";
         const x = this.x, y = this.y, s = this.size;
         ctx.beginPath();
